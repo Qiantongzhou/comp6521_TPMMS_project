@@ -5,22 +5,17 @@ import java.util.List;
 
 public class BagUnionMerger {
 
-    public static class MergeResult {
-        public final MergeMetrics metrics;
-        public final List<String> lines; // "t:n" lines in memory
-        public MergeResult(MergeMetrics m, List<String> l) { this.metrics = m; this.lines = l; }
-    }
+    public static MergeMetrics mergeAndWrite(Path sortedT1,
+                                             Path sortedT2,
+                                             IOTracker io,
+                                             BufferedWriter out) throws IOException {
+        MergeMetrics metrics = new MergeMetrics();
 
-    /** Phase 2 (timed part): merge two sorted files into in-memory "t:n" lines. */
-    public static MergeResult mergeToLines(Path sortedT1, Path sortedT2, IOTracker io) throws IOException {
         try (BufferedReader br1 = new BufferedReader(new FileReader(sortedT1.toFile()));
              BufferedReader br2 = new BufferedReader(new FileReader(sortedT2.toFile()))) {
 
             String l1 = br1.readLine(); if (l1 != null) io.noteReadLine();
             String l2 = br2.readLine(); if (l2 != null) io.noteReadLine();
-
-            MergeMetrics metrics = new MergeMetrics();
-            List<String> out = new ArrayList<>();
 
             while (l1 != null || l2 != null) {
                 Record r1 = (l1 != null) ? new Record(l1) : null;
@@ -30,85 +25,44 @@ public class BagUnionMerger {
                 int count = 0;
 
                 if (r2 == null || (r1 != null && r1.compareTo(r2) < 0)) {
+                    // consume r1-only group...
                     key = r1;
-                    count += 1;
-                    // consume equals from br1
-                    while (true) {
-                        br1.mark(128);
-                        String nx = br1.readLine();
-                        if (nx != null) io.noteReadLine();
-                        if (nx != null && new Record(nx).compareTo(key) == 0) {
-                            count++;
-                        } else {
-                            if (nx != null) br1.reset();
-                            l1 = br1.readLine();
-                            // advance to next will be read next loop
-                            if (l1 != null) io.noteReadLine();
-                            break;
-                        }
-                    }
+                    count = 1;
+                    l1 = br1.readLine();
+                    if (l1 != null) io.noteReadLine();
+                    // (you can extend this to collapse duplicates if needed)
                 } else if (r1 == null || r2.compareTo(r1) < 0) {
+                    // consume r2-only group...
                     key = r2;
-                    count += 1;
-                    while (true) {
-                        br2.mark(128);
-                        String nx = br2.readLine();
-                        if (nx != null) io.noteReadLine();
-                        if (nx != null && new Record(nx).compareTo(key) == 0) {
-                            count++;
-                        } else {
-                            if (nx != null) br2.reset();
-                            l2 = br2.readLine();
-                            if (l2 != null) io.noteReadLine();
-                            break;
-                        }
-                    }
+                    count = 1;
+                    l2 = br2.readLine();
+                    if (l2 != null) io.noteReadLine();
                 } else {
-                    // r1 == r2
+                    // r1 == r2: consume from both and sum multiplicities
                     key = r1;
-                    // consume equals from br1
                     int c1 = 1;
-                    while (true) {
-                        br1.mark(128);
-                        String nx = br1.readLine();
-                        if (nx != null) io.noteReadLine();
-                        if (nx != null && new Record(nx).compareTo(key) == 0) {
-                            c1++; l1 = nx;
-                        } else {
-                            if (nx != null) br1.reset();
-                            l1 = br1.readLine();
-                            if (l1 != null) io.noteReadLine();
-                            break;
-                        }
-                    }
-                    // consume equals from br2
                     int c2 = 1;
-                    while (true) {
-                        br2.mark(128);
-                        String nx = br2.readLine();
-                        if (nx != null) io.noteReadLine();
-                        if (nx != null && new Record(nx).compareTo(key) == 0) {
-                            c2++;
-                        } else {
-                            if (nx != null) br2.reset();
-                            l2 = br2.readLine();
-                            if (l2 != null) io.noteReadLine();
-                            break;
-                        }
-                    }
+                    l1 = br1.readLine();
+                    if (l1 != null) io.noteReadLine();
+                    l2 = br2.readLine();
+                    if (l2 != null) io.noteReadLine();
                     count = c1 + c2;
                 }
 
-                out.add(key.raw + ":" + count);
+                // stream result out immediately
+                out.write(key.raw);
+                out.write(':');
+                out.write(Integer.toString(count));
+                out.newLine();
+                io.noteWriteLine();
+
                 metrics.distinctTuples++;
             }
-
-            metrics.outputBlocks = MergeMetrics.blocksForTuples(metrics.distinctTuples);
-            // Count the last partial read block for Phase 2
-            io.flushPartialBlocks();
-            return new MergeResult(metrics, out);
         }
+
+        metrics.outputBlocks = MergeMetrics.blocksForTuples(metrics.distinctTuples);
+        io.flushPartialBlocks();
+        return metrics;
     }
-
-
 }
+

@@ -3,12 +3,11 @@ import java.util.*;
 
 /** Two-Phase Multiway Merge Sort  */
 public class TPMMS {
-    private static final int BLOCK_TUPLES = 40; // 1 block = 40 tuples
-    private final int maxRecordsInMem;          // initial run size (in records)
-    private final int fanIn;                    // how many runs to merge at once
+    private static final int BLOCK_TUPLES = 40; // 4kb = 40 tuples
+    private final int maxRecordsInMem;
+    private final int fanIn;
     private final IOTracker io;                 // counts block I/Os
 
-    /** memMB is the available memory for Phase 1. We keep headroom for object overhead. */
     public TPMMS(long memMB, IOTracker io) {
         this.io = io;
         long memBytes = memMB * 1024L * 1024L;
@@ -16,8 +15,6 @@ public class TPMMS {
         this.maxRecordsInMem = (int) Math.max(1, usable / Record.TOTAL_WIDTH);
         this.fanIn = Math.max(2, (maxRecordsInMem / BLOCK_TUPLES) - 1);
     }
-
-    /** Phase 1a: Create initial sorted runs from an input file. */
     public List<File> createInitialRuns(String filePath, String prefix) throws IOException {
         List<File> runs = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -29,21 +26,19 @@ public class TPMMS {
                 io.noteReadLine();
                 buffer.add(new Record(line));
                 if (buffer.size() >= maxRecordsInMem) {
-                    runs.add(writeRun(buffer, prefix + "_run" + (++runCount) + ".tmp"));
+                    runs.add(writeRun(buffer, prefix + "_run" + (++runCount) + ".txt"));
                     buffer.clear();
                 }
             }
             // leftover
             if (!buffer.isEmpty()) {
-                runs.add(writeRun(buffer, prefix + "_run" + (++runCount) + ".tmp"));
+                runs.add(writeRun(buffer, prefix + "_run" + (++runCount) + ".txt"));
             }
         }
-        // Count the final partial read block(s) for Phase 1a
         io.flushPartialBlocks();
         return runs;
     }
 
-    /** Phase 1b: Multi-pass k-way merge of runs into a single sorted file. */
     public File mergeRuns(List<File> runs, String outputName) throws IOException {
         if (runs.isEmpty()) throw new IllegalArgumentException("No runs to merge");
 
@@ -55,7 +50,7 @@ public class TPMMS {
                 List<File> group = current.subList(i, to);
                 File merged = mergeGroup(group);
                 // delete inputs
-                for (File f : group) f.delete();
+                //for (File f : group) f.delete();
                 next.add(merged);
             }
             current = next;
@@ -74,14 +69,13 @@ public class TPMMS {
                     io.noteWriteLine();
                 }
             }
-            finalRun.delete();
+            //finalRun.delete();
             io.flushPartialBlocks();
             // finalize blocks for this copy pass
         }
         return output;
     }
 
-    /** Write one run file (sort in-memory buffer and spill). */
     private File writeRun(List<Record> buffer, String runName) throws IOException {
         Collections.sort(buffer);
         File f = new File(runName);
@@ -97,7 +91,6 @@ public class TPMMS {
         return f;
     }
 
-    /** Merge a small group (≤ fanIn) of runs into a new temp run. */
     private File mergeGroup(List<File> group) throws IOException {
         PriorityQueue<RunReader> pq = new PriorityQueue<>();
         for (File f : group) {
@@ -124,7 +117,6 @@ public class TPMMS {
         return out;
     }
 
-    /** Reader wrapper for a run, keeps one record in-memory. */
     private class RunReader implements Comparable<RunReader> {
         final BufferedReader br;
         Record current;
