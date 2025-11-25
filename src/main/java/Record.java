@@ -10,13 +10,13 @@ public class Record implements Comparable<Record> {
     private static final int W_SIN = 9;      // SIN        (int, 09)
     private static final int W_ADDR = 56;    // Address    (char, 56)
     public static final int TOTAL_WIDTH = W_ID + W_FIRST + W_LAST + W_DEPT + W_PROG + W_SIN + W_ADDR; // 100
-    private final String studentId; // length 8, left-padded zeros if numeric
-    private final String firstName; // length 10, right-padded spaces
-    private final String lastName;  // length 10, right-padded spaces
-    private final String department;// length 3, left-padded zeros
-    private final String program;   // length 3, left-padded zeros
-    private final String sin;       // length 9, left-padded zeros
-    private final String address;   // length 56, right-padded spaces
+    private final String studentId; // length 8
+    private final String firstName; // length 10
+    private final String lastName;  // length 10
+    private final String department;// length 3
+    private final String program;   // length 3
+    private final String sin;       // length 9
+    private final String address;   // length 56
     public final String raw;
 
     public Record(String line) {

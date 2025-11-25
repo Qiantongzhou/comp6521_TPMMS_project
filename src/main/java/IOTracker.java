@@ -1,53 +1,43 @@
 public class IOTracker {
 
-    //1 disk block holds 40 records
+    // 1 disk block holds 40 records
     private static final int TUPLES_PER_BLOCK = 40;
 
-    private long linesReadSinceReset = 0;
-    private long linesWrittenSinceReset = 0;
+    private int readTuplesInCurrentBlock = 0;
+    private int writtenTuplesInCurrentBlock = 0;
 
     public long totalBlocksRead = 0;
     public long totalBlocksWritten = 0;
 
-    /**
-     * Call this method every time  read ONE line from a file.
-     */
     public void noteReadLine() {
-        linesReadSinceReset++;
+        readTuplesInCurrentBlock++;
 
-
-        if (linesReadSinceReset % TUPLES_PER_BLOCK == 0) {
+        if (readTuplesInCurrentBlock == TUPLES_PER_BLOCK) {
             totalBlocksRead++;
+            readTuplesInCurrentBlock = 0;
+            // start counting the next block
         }
     }
 
-    /**
-     * Call this method every time  write ONE line to a file.
-     */
     public void noteWriteLine() {
-        linesWrittenSinceReset++;
+        writtenTuplesInCurrentBlock++;
 
-        if (linesWrittenSinceReset % TUPLES_PER_BLOCK == 0) {
+        if (writtenTuplesInCurrentBlock == TUPLES_PER_BLOCK) {
             totalBlocksWritten++;
+            writtenTuplesInCurrentBlock = 0;
         }
     }
 
-    /**
-     * This method is called at the end of operation.
-     * It accounts for any partial blocks that were used.
-     */
-    public void flushPartialBlocks() {
 
-        if (linesReadSinceReset % TUPLES_PER_BLOCK != 0) {
+    public void flushPartialBlocks() {
+        if (readTuplesInCurrentBlock > 0) {
             totalBlocksRead++;
         }
-
-        if (linesWrittenSinceReset % TUPLES_PER_BLOCK != 0) {
+        if (writtenTuplesInCurrentBlock > 0) {
             totalBlocksWritten++;
         }
 
-        linesReadSinceReset = 0;
-        linesWrittenSinceReset = 0;
+        readTuplesInCurrentBlock = 0;
+        writtenTuplesInCurrentBlock = 0;
     }
 }
-

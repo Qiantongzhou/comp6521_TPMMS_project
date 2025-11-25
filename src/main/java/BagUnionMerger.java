@@ -25,20 +25,18 @@ public class BagUnionMerger {
                 int count = 0;
 
                 if (r2 == null || (r1 != null && r1.compareTo(r2) < 0)) {
-                    // consume r1-only group...
+                    // consume r1 only group...
                     key = r1;
                     count = 1;
                     l1 = br1.readLine();
                     if (l1 != null) io.noteReadLine();
-                    // (you can extend this to collapse duplicates if needed)
                 } else if (r1 == null || r2.compareTo(r1) < 0) {
-                    // consume r2-only group...
                     key = r2;
                     count = 1;
                     l2 = br2.readLine();
                     if (l2 != null) io.noteReadLine();
                 } else {
-                    // r1 == r2: consume from both and sum multiplicities
+                    // r1 == r2 consume from both and sum multiplicities
                     key = r1;
                     int c1 = 1;
                     int c2 = 1;

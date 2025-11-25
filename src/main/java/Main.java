@@ -18,35 +18,40 @@ public class Main {
         IOTracker io = new IOTracker();
         TPMMS sorter = new TPMMS(memMB, io);
 
-        long p1t1Start = System.currentTimeMillis();
-        List<File> t1Runs = sorter.createInitialRuns(t1Path, "src/outputfile/runs/T1");
-        File sortedT1 = sorter.mergeRuns(t1Runs, "src/outputfile/T1_sorted.txt");
-        long p1t1End = System.currentTimeMillis();
-        System.out.println("Phase 1 (T1 sort): " + (p1t1End - p1t1Start) + " ms, I/Os so far R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
+        // PHASE 1: create runs for T1 and T2
+        long p1Start = System.currentTimeMillis();
 
-        long p1t2Start = System.currentTimeMillis();
+        List<File> t1Runs = sorter.createInitialRuns(t1Path, "src/outputfile/runs/T1");
         List<File> t2Runs = sorter.createInitialRuns(t2Path, "src/outputfile/runs/T2");
-        File sortedT2 = sorter.mergeRuns(t2Runs, "src/outputfile/T2_sorted.txt");
-        long p1t2End = System.currentTimeMillis();
-        System.out.println("Phase 1 (T2 sort): " + (p1t2End - p1t2Start) + " ms, I/Os cumulative R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
+
+        long p1End = System.currentTimeMillis();
+        System.out.println("Phase 1 (run generation only): " + (p1End - p1Start) + " ms");
+        System.out.println("After Phase 1, total I/Os R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
+        System.out.println("T1 runs: " + t1Runs.size() + ", T2 runs: " + t2Runs.size());
+  // PHASE 2: merge all runs for T1 and T2, then bag union
 
         long p2Start = System.currentTimeMillis();
+
+        //  TPMMS for T1 and T2
+        File t1Sorted = sorter.multiPassMerge(t1Runs, "T1");
+        File t2Sorted = sorter.multiPassMerge(t2Runs, "T2");
 
         File output = new File("src/outputfile/BagUnion_Output.txt");
         MergeMetrics resultMetrics;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(output))) {
             resultMetrics = BagUnionMerger.mergeAndWrite(
-                    sortedT1.toPath(),
-                    sortedT2.toPath(),
+                    t1Sorted.toPath(),
+                    t2Sorted.toPath(),
                     io,
                     bw);
         }
 
+        long p2End = System.currentTimeMillis();
+
         System.out.println("Distinct tuples: " + resultMetrics.distinctTuples);
         System.out.println("Output blocks (40 tuples/block): " + resultMetrics.outputBlocks);
-        System.out.println("Total I/Os after write R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
-        long p2End = System.currentTimeMillis();
-        System.out.println("Phase 2 (bag-union, in-memory): " + (p2End - p2Start) + " ms");
+        System.out.println("After Phase 2, total I/Os R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
+        System.out.println("Phase 2 (TPMMS multi-pass + bag union): " + (p2End - p2Start) + " ms");
 
     }
     private static void clearOutputDir(String dirPath) {
@@ -64,7 +69,6 @@ public class Main {
 
         for (File f : files) {
             if (f.isDirectory()) {
-                // if you never put subdirs here, you can skip this block
                 File[] inner = f.listFiles();
                 if (inner != null) {
                     for (File c : inner) {
