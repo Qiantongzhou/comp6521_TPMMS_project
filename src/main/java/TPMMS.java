@@ -5,14 +5,14 @@ import java.util.*;
 public class TPMMS {
     private static final int BLOCK_TUPLES = 40; // 4kb = 40 tuples
     private final int maxRecordsInMem;
-    private final int K;
+    private final int K;//may be useful in lecture?
     private final IOTracker io;
     // counts block I/Os
 
     public TPMMS(long memMB, IOTracker io) {
         this.io = io;
         long memBytes = memMB * 1024L * 1024L;
-        long usable = (long) (memBytes * 0.6); // ~60% to be safe
+        long usable = (long) (memBytes * 0.6); // 60% to be safe
         this.maxRecordsInMem = (int) Math.max(1, usable / Record.TOTAL_WIDTH);
         this.K = Math.max(2, (maxRecordsInMem / BLOCK_TUPLES) - 1);
     }
@@ -49,12 +49,13 @@ public class TPMMS {
         List<File> currentRuns = new ArrayList<>(initialRuns);
         int pass = 0;
 
-        System.out.println("=== " + relName + " Phase 2: external merge sort (pairwise) ===");
+        System.out.println("\n--------------"+relName+ " Phase 2: external merge sort------------");
+
         System.out.println("Initial runs r = " + currentRuns.size());
 
         while (currentRuns.size() > 1) {
             pass++;
-            System.out.println("\n-- " + relName + " Pass " + pass + " --");
+            System.out.println("\n------------- " + relName + " Pass " + pass + " ");
             System.out.println("  Input runs this pass: " + currentRuns.size());
 
             List<File> nextRuns = new ArrayList<>();
@@ -65,32 +66,32 @@ public class TPMMS {
                     File left  = currentRuns.get(i);
                     File right = currentRuns.get(i + 1);
 
-                    System.out.println("    Merging runs " + i + " and " + (i + 1)
-                            + " (" + left.getName() + ", " + right.getName() + ")");
+                    System.out.println("    Merging runs " + i + " and " + (i + 1)+" "
+                            +  left.getName() + ", " + right.getName() );
 
                     File merged = mergeTwoRuns(left, right);
                     nextRuns.add(merged);
 
 
                 } else {
-                    System.out.println("    Carrying over run " + i + " (" + currentRuns.get(i).getName() + ")");
+                    System.out.println("    Carrying over run " + i + "  " + currentRuns.get(i).getName() + "");
                     nextRuns.add(currentRuns.get(i));
                 }
             }
 
             currentRuns = nextRuns;
-            System.out.println("  After pass " + pass + " we have " + currentRuns.size() + " runs.");
+            System.out.println("  After pass " + pass + " there are " + currentRuns.size() + " runs.");
         }
 
         File finalRun = currentRuns.get(0);
-        System.out.println("\n=== " + relName + " Phase 2 merge sort done in " + pass
-                + " passes; final sorted file: " + finalRun.getName() + " ===");
+        System.out.println("\n---- " + relName + " Phase 2 merge sort done in " + pass
+                + " passes; final sorted file: " + finalRun.getName() + " ");
 
         return finalRun;
     }
 
     private File mergeTwoRuns(File leftFile, File rightFile) throws IOException {
-        File out = File.createTempFile("tpmms_mergesort_", ".tmp");
+        File out = File.createTempFile("tpmms_", ".tmp");
 
         try (BufferedReader br1 = new BufferedReader(new FileReader(leftFile));
              BufferedReader br2 = new BufferedReader(new FileReader(rightFile));

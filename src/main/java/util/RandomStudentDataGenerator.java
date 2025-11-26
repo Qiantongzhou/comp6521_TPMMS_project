@@ -9,10 +9,9 @@ import java.util.Random;
 
 public class RandomStudentDataGenerator {
 
-    // Default number of records (1 million)
+    // Default number of records
     private static final int DEFAULT_RECORD_COUNT = 1_000_000;
 
-    // Field lengths from the project description
     // 1. Student ID: int(08)
     // 2. First Name: char(10)
     // 3. Last Name: char(10)
@@ -53,16 +52,17 @@ public class RandomStudentDataGenerator {
         String outputFile = (args.length > 0) ? args[0] : "src/inputfile/T2_records_1m.txt";
         int recordCount = (args.length > 1) ? Integer.parseInt(args[1]) : DEFAULT_RECORD_COUNT;
 
-        // Use ASCII so that 1 char = 1 byte, matching the "100 bytes per record" assumption.
+        // Use ASCII so that 1 char
         try (BufferedWriter writer = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.US_ASCII))) {
 
-            Random random = new Random(); // you can use a fixed seed for reproducibility if you want
+            Random random = new Random();
 
             for (int i = 0; i < recordCount; i++) {
                 String record = generateRecord(random);
                 writer.write(record);
-                writer.newLine(); // each tuple on its own line (Unix-style file)
+                writer.newLine();
+                // each tuple on its own line
             }
 
             System.out.println("Generated " + recordCount + " records into " + outputFile);
@@ -75,48 +75,47 @@ public class RandomStudentDataGenerator {
     private static String generateRecord(Random random) {
         StringBuilder sb = new StringBuilder();
 
-        // 1. Student ID: 8 digits, no leading zero
+        // 1. Student ID: 8 digits
         String studentId = randomNumericString(random, ID_LEN, false);
         sb.append(studentId);
 
-        // 2. First Name: char(10), padded / truncated
+        // 2. First Name: char(10)
         String firstName = FIRST_NAMES[random.nextInt(FIRST_NAMES.length)];
         sb.append(padOrTruncate(firstName, FIRST_NAME_LEN));
 
-        // 3. Last Name: char(10), padded / truncated
+        // 3. Last Name: char(10)
         String lastName = LAST_NAMES[random.nextInt(LAST_NAMES.length)];
         sb.append(padOrTruncate(lastName, LAST_NAME_LEN));
 
-        // 4. Department: int(03), e.g. 444, 555, 666, 777
+        // 4. Department: int(03)
         int[] departments = {444, 555, 666, 777};
         int dept = departments[random.nextInt(departments.length)];
         sb.append(padLeftWithZeros(Integer.toString(dept), DEPT_LEN));
 
-        // 5. Program: int(03), some random code 100–999
+        // 5. Program: int(03),
         int program = 100 + random.nextInt(900);
         sb.append(padLeftWithZeros(Integer.toString(program), PROGRAM_LEN));
 
-        // 6. SIN Number: 9 digits, no leading zero
+        // 6. SIN Number
         String sin = randomNumericString(random, SIN_LEN, false);
         sb.append(sin);
 
-        // 7. Address: char(56), padded / truncated
+        // 7. Address: char(56)
         String address = randomAddress(random);
         sb.append(padOrTruncate(address, ADDRESS_LEN));
 
-        // At this point, sb has exactly 8+10+10+3+3+9+56 = 99 characters.
-        // The assignment says 100 bytes per record; that mismatch is likely off by 1 in the spec.
-        // If you *must* hit exactly 100, you could make ADDRESS_LEN = 57 instead.
+        // sb has exactly 8+10+10+3+3+9+56 = 99 characters.
 
         return sb.toString();
     }
 
     private static String randomAddress(Random random) {
-        int houseNo = 100 + random.nextInt(9900); // 100–9999
+        int houseNo = 100 + random.nextInt(9900);
+        // 100–9999
         String streetName = STREET_NAMES[random.nextInt(STREET_NAMES.length)];
         String streetType = STREET_TYPES[random.nextInt(STREET_TYPES.length)];
 
-        // Example: "1455 Maisonneuve West, Montreal, QC, H3G 1M8"
+        // 1455 Maisonneuve West, Montreal, QC, H3G 1M8
         String base = houseNo + " " + streetName + " " + streetType
                 + ", Montreal, QC, H3G 1M8";
         return base;
@@ -149,13 +148,6 @@ public class RandomStudentDataGenerator {
         return sb.toString();
     }
 
-    /**
-     * Generates a numeric string of a given number of digits.
-     *
-     * @param random       Random instance
-     * @param digits       number of digits
-     * @param allowLeadingZero true if first digit can be 0
-     */
     private static String randomNumericString(Random random, int digits, boolean allowLeadingZero) {
         StringBuilder sb = new StringBuilder(digits);
         for (int i = 0; i < digits; i++) {

@@ -2,13 +2,21 @@
 public class Record implements Comparable<Record> {
 
     // Field widths sum must be 100
-    private static final int W_ID = 8;       // Student ID (int, 08)
-    private static final int W_FIRST = 10;   // First Name (char, 10)
-    private static final int W_LAST = 10;    // Last Name  (char, 10)
-    private static final int W_DEPT = 3;     // Department (int, 03)
-    private static final int W_PROG = 3;     // Program    (int, 03)
-    private static final int W_SIN = 9;      // SIN        (int, 09)
-    private static final int W_ADDR = 56;    // Address    (char, 56)
+    private static final int W_ID = 8;
+    // Student ID
+
+    private static final int W_FIRST = 10;
+    // First Name
+    private static final int W_LAST = 10;
+    // Last Name
+    private static final int W_DEPT = 3;
+    // Department
+    private static final int W_PROG = 3;
+    // Program
+    private static final int W_SIN = 9;
+    // SIN
+    private static final int W_ADDR = 56;
+    // Address
     public static final int TOTAL_WIDTH = W_ID + W_FIRST + W_LAST + W_DEPT + W_PROG + W_SIN + W_ADDR; // 100
     private final String studentId; // length 8
     private final String firstName; // length 10

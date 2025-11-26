@@ -14,8 +14,10 @@ public class BagUnionMerger {
         try (BufferedReader br1 = new BufferedReader(new FileReader(sortedT1.toFile()));
              BufferedReader br2 = new BufferedReader(new FileReader(sortedT2.toFile()))) {
 
-            String l1 = br1.readLine(); if (l1 != null) io.noteReadLine();
-            String l2 = br2.readLine(); if (l2 != null) io.noteReadLine();
+            String l1 = br1.readLine();
+            if (l1 != null) io.noteReadLine();
+            String l2 = br2.readLine();
+            if (l2 != null) io.noteReadLine();
 
             while (l1 != null || l2 != null) {
                 Record r1 = (l1 != null) ? new Record(l1) : null;

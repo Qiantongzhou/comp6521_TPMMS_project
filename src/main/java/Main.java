@@ -11,9 +11,9 @@ public class Main {
         long maxHeapMB = Runtime.getRuntime().maxMemory() / (1024 * 1024);
 
         long memMB=maxHeapMB/5;
-        System.out.println("JVM maxHeap (MB) = " + maxHeapMB + " | memMB for TPMMS = " + memMB);
+        System.out.println("JVM maxHeap MB = " + maxHeapMB + " | memMB for TPMMS = " + memMB);
         if (maxHeapMB < memMB) {
-            System.out.println("WARNING: -Xmx is less than requested memMB; set e.g. -Xmx" + (memMB + 64) + "m");
+            System.out.println("WARNING: -Xmx is less than requested memMB; set  -Xmx" + (memMB + 64) + "m");
         }
         IOTracker io = new IOTracker();
         TPMMS sorter = new TPMMS(memMB, io);
@@ -25,7 +25,7 @@ public class Main {
         List<File> t2Runs = sorter.createInitialRuns(t2Path, "src/outputfile/runs/T2");
 
         long p1End = System.currentTimeMillis();
-        System.out.println("Phase 1 (run generation only): " + (p1End - p1Start) + " ms");
+        System.out.println("Phase 1 run generation: " + (p1End - p1Start) + " ms");
         System.out.println("After Phase 1, total I/Os R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
         System.out.println("T1 runs: " + t1Runs.size() + ", T2 runs: " + t2Runs.size());
   // PHASE 2: merge all runs for T1 and T2, then bag union
@@ -49,9 +49,9 @@ public class Main {
         long p2End = System.currentTimeMillis();
 
         System.out.println("Distinct tuples: " + resultMetrics.distinctTuples);
-        System.out.println("Output blocks (40 tuples/block): " + resultMetrics.outputBlocks);
+        System.out.println("Output blocks 40 block: " + resultMetrics.outputBlocks);
         System.out.println("After Phase 2, total I/Os R=" + io.totalBlocksRead + " W=" + io.totalBlocksWritten);
-        System.out.println("Phase 2 (TPMMS multi-pass + bag union): " + (p2End - p2Start) + " ms");
+        System.out.println("Phase 2 TPMMS multi pass + bag union: " + (p2End - p2Start) + " ms");
 
     }
     private static void clearOutputDir(String dirPath) {
